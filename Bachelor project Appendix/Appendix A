@@ -1,0 +1,514 @@
+%% APPENDIX A 
+%% 1
+% Clearing of workspace and file selection 
+clear all;close all;clc
+[Name,Path] =uigetfile('*.h5', 'Select data files', 'on');
+h = WindtunnelHDF5([Path,Name]);
+% h = WindtunnelHDF5('Windtunnel_Prey_Capture_Buzz_1629109141_20210816_121901_S005_Mnat_2021_36_5.h5');
+
+% inspect models and select models
+h.ls_models
+model_path = h.ls_models{1};
+
+% get model prediciton
+pred1 = h.get_prediction_from_model(model_path,1);
+pred2 = h.get_prediction_from_model(model_path,2);
+% smooth predictions
+pred1 = smooth_2D_predicitons(pred1,5,20);
+pred2 = smooth_2D_predicitons(pred2,5,20);
+% get skeleton
+skel = h.get_skeleton_from_model(model_path);
+
+% activate/set model output manually (RAW data)
+h.camera1.setPrediction(pred1);
+h.camera2.setPrediction(pred2);
+h.setSkeleton(skel);
+
+% set camera_parameters for 3D coordinate extraction
+[name,path] = uigetfile('*.mat','select calibration file');
+% h.setCameraParameters_from_mat('Windtunnel_Calibration_1629126391_20210816_170631_S001_cal_camera_params_rnd200.mat');
+h.setCameraParameters_from_mat([path,name]);
+
+%% 2
+% PLAY from frame number 800 until frame 999 (played 200 frames).
+% markers = nose = 1, mouth top = 2, moth left cornor = 3, mouth bottom = 4, mouth right cornor = 5
+%h.play_predictions([600,700],'adapthisteq',true,'selected_features',1:5,'fps',100);
+
+%% 3
+
+% Align sound and video
+% extract sound
+sig = h.audio.get_audio;
+fs = h.audio.fs;
+% allign sound and video
+totalframes = double(h.camera1.attr.FrameInfo_TotalFrame);
+framespretrigger = double(h.camera1.attr.FrameInfo_StartFrame);
+AudioAtFrameZero = find(sig(12,:) > 0.8,1,'first');
+
+NSamplesPerFrame = fs/h.camera1.attr.RecordRate_fps;
+
+FrameNrToSample = NSamplesPerFrame.*((1:totalframes)+framespretrigger)+AudioAtFrameZero-1;
+
+videotime = round(FrameNrToSample(1)):round(FrameNrToSample(end)+NSamplesPerFrame);
+frames = linspace(1,totalframes+1,length(videotime));
+
+% plot sound
+figure(1)
+clf
+ax(1) = subplot(6,1,1);
+plot(frames,sig(5,videotime))
+xlabel('Pressure (Pa)')
+% title(name)
+ax(2) = subplot(6,1,2);
+plot(frames,sig(12,videotime))
+xlabel('Sync channel')
+linkaxes(ax,'x')
+xlim([1 totalframes+1])
+
+%% 4
+% Get 3D coordinates
+% Selection of coords based on the model skeleton
+% COORDS = h.get_3D_coords();
+COORDS = h.get_3D_coords('selected_features',1:5);
+topm = squeeze(COORDS(:,2,1:3));
+bottomm = squeeze(COORDS(:,4,1:3));
+sidel = squeeze(COORDS(:,3,1:3));
+sider = squeeze(COORDS(:,5,1:3));  
+
+
+%% 5
+% Mouth top and bottom 
+% calculation of the distance between the top of the mouth and the bottom
+% of the mouth (distm) as well as calcultion of the confidence 
+diffvektor = topm-bottomm;
+confidenceTop = [pred1(:,2,3) pred2(:,2,3)];
+confidenceBottom = [pred1(:,4,3) pred2(:,4,3)];
+distm = sqrt(sum(diffvektor.^2,2));
+figure(1)
+ax(3) = subplot(6,1,3);
+plot(smooth(distm,21))
+xlabel('Distance between top and bottom of mouth (mm)')
+ylim([4 10])
+linkaxes(ax,'x')
+xlim([1 totalframes+1])
+
+ax(4) = subplot(6,1,4);
+plot(confidenceTop,'k')
+hold on
+plot(confidenceBottom,'r')
+hold off
+ylim([0 1])
+linkaxes(ax,'x')
+xlim([1 totalframes+1])
+xlabel('Confidence for top and bottom of mouth')
+
+%% 6
+% Mouth sides 
+% calculation of the distance between the left side of the mouth and the
+% right side of the mouth (distm2) as well as calcultion of the confidence. 
+diffvektor2 = sidel-sider;
+confidencel = [pred1(:,3,3) pred2(:,3,3)];
+confidencer = [pred1(:,5,3) pred2(:,5,3)];
+distm2 = sqrt(sum(diffvektor2.^2,2));
+figure(1)
+ax(3) = subplot(6,1,5);
+plot(smooth(distm2,21))
+xlabel('Distance between left and right side of the mouth (mm)')
+ylim([4 10])
+linkaxes(ax,'x')
+xlim([1 totalframes+1])
+
+ax(4) = subplot(6,1,6);
+plot(confidencel,'k')
+hold on
+plot(confidencer,'r')
+hold off
+ylim([0 1])
+linkaxes(ax,'x')
+xlim([1 totalframes+1])
+xlabel('Confidence for left and right side of the mouth')
+
+
+%% 7
+% Localize bat and compute timedelay
+% Detection of calls, and calculation of the call/pulseinterval. 
+thr = 0.01;
+calls = findcalls(abs(sig(5,:)),thr,4e-3*fs);
+calls(calls < videotime(1)) = [];
+calls(calls > videotime(end)) = [];
+pulseinterval = [(calls(2)-calls(1))/fs;diff(calls)./fs];
+lastbuzzcall = find(pulseinterval<0.01,1,'last');
+if lastbuzzcall < length(calls)
+    calls(lastbuzzcall+1:end) = [];
+    pulseinterval(lastbuzzcall+1:end) = [];
+end
+%sorting the data for the pulseinterval
+tempbuzzcallindex = find(pulseinterval < 0.007,4);
+calls(tempbuzzcallindex(end):end) = [];
+pulseinterval(tempbuzzcallindex(end):end) = [];
+load("array.mat")
+figure(5)
+subplot(4,1,1)
+plot(abs(sig(5,:)))
+hold on
+plot(calls,thr,'or')
+hold off
+xlim([videotime(1) videotime(end)])
+
+cwidth = round([2e-3 3.5e-3]*fs);
+localizationchannels = [1:11 13:16];
+coords = [];
+for n = 1:length(calls)
+       
+    for nn = 1:length(localizationchannels)
+        segment1 = sig(localizationchannels(nn),calls(n)-cwidth(1):calls(n)+cwidth(2));
+        segment2 = sig(5,calls(n)-cwidth(1):calls(n)+cwidth(2));
+        [~,peaksample(n,nn)] = max(abs(hilbert(xcorr(segment1,segment2))));
+    end
+    coords(n,:) = localization(peaksample(n,:)./fs,array,344,'2d');
+    if ~isreal(coords(n,:))
+        coords(n,:) = NaN;
+    end
+
+end
+figure(5)
+subplot(4,1,[2,3])
+plot(coords(:,2),coords(:,1),'-*')
+hold on
+plot(array(:,2),array(:,1),'or')
+hold off
+subplot(4,1,4)
+plot(coords(:,2),coords(:,3),'-*')
+hold on
+plot(array(:,2),array(:,3),'or')
+hold off
+%% 8
+% Calculation of distance to the mic, and finding the calltime
+
+distance=sqrt(sum(coords-array(5,:).^2,2));
+
+
+% distance = linspace(min(dist_mic_5), max(dist_mic_5), length(calls))';
+delay = round((distance/344)*fs);
+delaycalls = calls - delay;
+idx = delaycalls > 0;
+callsFrametime = round(frames(delaycalls(idx)-videotime(1)));
+
+
+
+
+%% 9
+% Finding the mouth gape size at the calls and before the calls 
+mouth_vertical_at_call = distm(callsFrametime);
+mouth_vertical_between_call = [];
+for n = 1:length(callsFrametime)-1
+    mouth_vertical_between_call(n) = min(distm(callsFrametime(n):callsFrametime(n+1)));
+end
+mouth_vertical_between_call = [NaN,mouth_vertical_between_call];
+
+figure(2);
+clf
+subplot(2,1,1)
+plot(callsFrametime,mouth_vertical_at_call,'-*')
+hold on
+plot(callsFrametime,mouth_vertical_between_call,'-*')
+hold off
+xlim([200 1400])
+ylim([0 10])
+ylabel('mouth gape size at call and before call (mm)')
+subplot(2,1,2)
+plot(confidenceTop,'k')
+hold on
+plot(confidenceBottom,'r')
+hold off
+ylim([0 1])
+linkaxes(ax,'x')
+xlim([200 1400])
+xlabel('frame')
+ylabel('Confidence for top and bottom of mouth')
+
+%% 10
+% Vertical mouth movement with confidence above 0.8
+% Sorting the data for distm according to the confidence values. 
+idx2 = find((confidenceTop(:,1) > 0.5) & (confidenceTop(:,2) > 0.8) & (confidenceBottom(:,1) > 0.5) & (confidenceBottom(:,2) > 0.5));
+Idx = ismember(callsFrametime, idx2);
+mouth_vertical_between_call(~Idx) = NaN;
+% Filter callsFrametime, mouth_vertical_at_call, and mouth_vertical_between_call based on idx
+callsFrametime_filtered = callsFrametime(Idx);
+mouth_vertical_at_call_filtered = mouth_vertical_at_call(Idx);
+mouth_vertical_between_call_filtered = mouth_vertical_between_call(Idx);
+figure(2)
+subplot(2,1,1)
+hold on
+plot(callsFrametime_filtered,mouth_vertical_at_call_filtered,'ok')
+plot(callsFrametime_filtered,mouth_vertical_between_call_filtered,'ok')
+hold off
+% Compute x and y using the filtered vectors
+x = pulseinterval(Idx);
+y = mouth_vertical_at_call_filtered - mouth_vertical_between_call_filtered';
+
+% Plot the data
+figure(103)
+plot(x, y, '*')
+xlabel('Pulse Interval (ms)')
+ylabel('Δ vertical mouth gape (mm)')
+
+%Saving the data 
+Data.vertical.AtCall = mouth_vertical_at_call_filtered;
+Data.vertical.BetweenCall = mouth_vertical_between_call_filtered;
+Data.vertical.pulseinterval = pulseinterval(Idx);
+Data.vertical.frame = callsFrametime(Idx);
+
+
+%% 11
+% change in horizontal mouth movement
+% The same as above, just for distm2 instead of distm
+mouth_horizontal_at_call = distm2(callsFrametime);
+mouth_horizontal_between_call = [];
+for n = 1:length(callsFrametime)-1
+    mouth_horizontal_between_call(n) = min(distm2(callsFrametime(n):callsFrametime(n+1)));
+end
+mouth_horizontal_between_call = [NaN,mouth_horizontal_between_call];
+
+figure(3);
+clf
+subplot(2,1,1)
+plot(callsFrametime,mouth_horizontal_at_call,'-*')
+hold on
+plot(callsFrametime,mouth_horizontal_between_call,'-*')
+hold off
+ylim([0 10])
+subplot(2,1,2)
+plot(confidencel,'k')
+hold on
+plot(confidencer,'r')
+hold off
+ylim([0 1])
+% linkaxes(ax,'x')
+xlim([1 totalframes+1])
+ylabel('Confidence left and right of mouth')
+
+
+%% 11
+% horizontal mouth movement with confidence above 0.8
+% Filter callsFrametime, mouth_vertical_at_call, and mouth_vertical_between_call based on idx
+idx3 = find((confidencel(:,1) > 0.5) & (confidencel(:,2) > 0.5) & (confidencer(:,1) > 0.5) & (confidencer(:,2) > 0.5));
+Idx2 = ismember(callsFrametime, idx3);
+
+callsFrametime_filtered2 = callsFrametime(Idx2);
+mouth_horizontal_at_call_filtered = mouth_horizontal_at_call(Idx2);
+mouth_horizontal_between_call_filtered = mouth_horizontal_between_call(Idx2);
+
+figure(3)
+subplot(2,1,1)
+hold on
+plot(callsFrametime_filtered2,mouth_horizontal_at_call_filtered,'ok')
+plot(callsFrametime_filtered2,mouth_horizontal_between_call_filtered,'ok')
+hold off
+
+% Compute x and y using the filtered vectors
+x = pulseinterval(Idx2);
+y = mouth_horizontal_at_call_filtered - mouth_horizontal_between_call_filtered';
+
+% Plot the data
+figure(104)
+plot(x, y, '*')
+
+Data.horizontal.AtCall = mouth_horizontal_at_call_filtered;
+Data.horizontal.BetweenCall = mouth_horizontal_between_call_filtered;
+Data.horizontal.pulseinterval = pulseinterval(Idx2);
+Data.horizontal.frame = callsFrametime(Idx2);
+%% 12
+% 3D choords for eyes
+% Extracting the coords for the eyes as well as messure the distance
+% between the eyes 
+COORDS_Eye = h.get_3D_coords('selected_features',6:7);
+
+EyeL = squeeze(COORDS_Eye(:,1,1:3));
+EyeR = squeeze(COORDS_Eye(:,2,1:3));  
+
+diffvektorEye = EyeL-EyeR;
+
+distEye = sqrt(sum(diffvektorEye.^2,2));
+
+confidenceEyeL = [pred1(:,6,3) pred2(:,6,3)];
+confidenceEyeR = [pred1(:,7,3) pred2(:,7,3)];
+
+Data.eyes.distance = distEye;
+Data.eyes.confidenceEyeL = confidenceEyeL;
+Data.eyes.confidenceEyeR = confidenceEyeR;
+
+
+figure(6)
+subplot(2,1,1)
+plot(smooth(distEye,21))
+ylim([5 10])
+xlim([1 totalframes+1])
+subplot(2,1,2)
+plot(confidenceEyeL,'k')
+hold on
+plot(confidenceEyeR,'r')
+hold off
+ylim([0 1])
+% linkaxes(ax,'x')
+xlim([1 totalframes+1])
+
+%% 13
+% worm
+% Extracting the coords for the worm 
+COORDS_Worm = h.get_3D_coords('selected_features',20:20);
+Worm = squeeze(COORDS_Worm(:,1,1:3))
+confidenceWorm = [pred1(:,20,3) pred2(:,20,3)];
+
+% Find the index of the first time point where the confidence value is above 0.5
+idx4 = find(confidenceWorm(:,1) > 0.5, 1);
+
+% Extract the 3D coordinates for the worm at the fixed time point
+FixedCoordsWorm = Worm(idx4,:);
+
+for i = 1:size(confidenceWorm, 1)
+    if max(confidenceWorm(i, :)) > 0.5
+        FixedPointWorm = Worm(i, :);
+        break;
+    end
+end
+
+Data.FixedPointWorm = FixedPointWorm
+
+
+
+%% 14
+% Mouth gape Vertical
+% finding the distance to the worm for the top of the mouth 
+distvector = (topm - FixedPointWorm);
+distw = sqrt(sum(distvector.^2, 2));
+
+figure(8)
+x = distw(idx2);
+y1 = distm(idx2);
+y2 = distEye(idx2);
+plot(x, y1, 'b', x, y2, 'r')
+xlabel 'Distance to worm (mm)'
+ylabel 'Vertical mouth gape (mm) & eye distance'
+
+figure(9)
+subplot(2,1,1)
+plot(distw)
+subplot(2,1,2)
+plot(confidenceWorm)
+
+Data.Distw=distw
+Data.Dist_to_Worm_Vertical = distw(idx2);
+Data.Vertical.Gape = distm(idx2);
+%% 15
+% Mouth gape Horizontal
+figure(10)
+x=distw(idx3)
+y1=distm2(idx3)
+y2 = distEye(idx3);
+plot(x, y1, 'b', x, y2, 'r')
+xlabel 'Distance to worm (mm)'
+ylabel 'Vertical mouth gape (mm) & eye distance'
+
+
+Data.Horizontal.Gape = distm2(idx3)
+
+
+%% 16
+% mouthgape over distance to worm
+
+figure(12)
+
+% Plot distance to mouth and eye movements
+plot(distw(idx2), distm(idx2), 'b', distw(idx2), distEye(idx2), 'r')
+hold on
+
+% Add dots at call frames on the mouth gape
+scatter(distw(callsFrametime_filtered), distm(callsFrametime_filtered), 'Marker', 'o', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r')
+
+xlabel('Distance to worm (mm)')
+ylabel('Mouth gape / Distance bewteen eyes (mm))')
+legend('Mouth gape', 'Distance bewteen eyes', 'Calls')
+ylim([1 10])
+% Reverse x-axis direction
+set(gca, 'XDir', 'reverse')
+
+%% 17
+% Horizontal mouthgape over distance to worm
+% Plot distance to mouth and eye movements
+figure(13)
+plot(distw(idx3), distm2(idx3), 'b', distw(idx3), distEye(idx3), 'r')
+hold on
+
+% Add dots at call frames on the mouth gape
+scatter(distw(callsFrametime_filtered2), distm2(callsFrametime_filtered2), 'Marker', 'o', 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r')
+
+xlabel('Distance to worm (mm)')
+ylabel('Mouth gape / eye distance (mm))')
+legend('Mouth gape', 'Eye distance', 'Calls')
+ylim([1 10])
+% Reverse x-axis direction
+set(gca, 'XDir', 'reverse')
+
+%% 18
+% vertical Minimum and Maximum Mouth Gape over Pulse Interval
+figure (14)
+
+% Plot minimum and maximum values
+plot(pulseinterval(Idx), mouth_vertical_between_call_filtered, 'ro-', pulseinterval(Idx), mouth_vertical_at_call_filtered, 'go-','LineStyle', 'none')
+
+% Set axis labels and title
+xlabel('Pulse interval (s)')
+ylabel('Mouth gape (mm)')
+title('Minimum and Maximum Mouth Horizontal Gape over Pulse Interval')
+legend('Min points', 'Max points')
+xlim([0 0.1])
+ylim([4 8])
+
+%% 19
+% Horisontal minimum and Maximum Mouth Gape over Pulse Interval
+figure (15)
+% Plot minimum and maximum values
+plot(pulseinterval(Idx2), mouth_horizontal_between_call_filtered, 'ro-', pulseinterval(Idx2), mouth_horizontal_at_call_filtered, 'go-','LineStyle', 'none')
+
+% Set axis labels and title
+xlabel('Pulse interval (s)')
+ylabel('Mouth gape (mm)')
+title('Minimum and Maximum Mouth Gape over Pulse Interval')
+legend('Min points', 'Max points')
+xlim([0 0.1])
+ylim([4 8])
+
+
+%% 20
+% Create new figure for distw over pulseinterval
+figure(16)
+% Plot distw over pulseinterval
+plot(pulseinterval(Idx), distw(callsFrametime_filtered), 'b.', 'LineStyle', 'none')
+
+% Set axis labels and title
+
+xlabel('Pulse interval (s)')
+ylabel('Distance to worm (mm)')
+title('Distance to Worm over Pulse Interval')
+
+
+%% 21
+% Save data
+
+save([Path,Name(1:end-3) '.mat'],'Data')
+
+
+
+
+%% 22
+% LOCAL FUNCTION
+function [pred] = smooth_2D_predicitons(pred, rmofiltersz, filtersz)
+    for k = 1:size(pred,2)
+        % outlier removal
+        [~, TF1] = rmoutliers(squeeze(pred(:,k,1:2)),'movmedian',rmofiltersz,1);
+        pred(TF1,k,1:2) = NaN;
+        % smoothing
+        pred(:,k,1:2) = smoothdata(pred(:,k,1:2),1,'rlowess',filtersz,'omitnan');
+    end
+end
