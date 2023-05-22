@@ -1,0 +1,148 @@
+## APPENDIX D
+rm(list=ls())
+
+setwd("/Users/hgu33/Dropbox/SDU/Bachelor/R kode")
+source("/Users/hgu33/Dropbox/SDU/Bachelor/R kode/diagnostic_fcns.r")
+
+library(readxl)
+xdata=all_data_table_sorted <- read_excel("all_data_table_sorted.xlsx")
+
+xdata$Name <- as.factor(xdata$Name)
+
+
+par(mfrow=c(1,1))
+plot(table(xdata$`delta mouth`)) 
+
+plot(x=xdata$Name, y=xdata$`delta mouth`) #variation within and between individuals
+
+plot(table(xdata$Name))
+# distribution of the response
+hist(xdata$pulse)
+min(xdata$pulse)
+hist(log(xdata$pulse))
+xdata$log.stress = log(xdata$pulse)
+
+xx = tapply(X=xdata$`delta mouth`, INDEX=xdata$Name, FUN=mean, na.rm=T) # mean per individual
+xdata$mean.ai = as.vector(xx[as.character(xdata$Name)])
+
+
+
+
+head(xdata)
+
+xdata$within.ai = xdata$`delta mouth` - xdata$mean.ai # centered around mean per individual
+head(xdata)
+mean(xdata$within.ai,na.rm=T)
+
+# z-transform
+xdata$z.mean.ai = as.vector(scale(xdata$mean.ai))
+xdata$z.within.ai = as.vector(scale(xdata$within.ai))
+
+# FIT MODEL
+library(lme4)
+## by including both components, we are testing 2 different hypotheses - are estimating coefficients for both
+full <- lmer(log.stress ~  z.within.ai + z.mean.ai + # fixed effects, including average per individual (z.mean.ai) and deviation from that average (z.within.ai)
+               (1+z.within.ai|Name), # random effects with within-subject variation as slope (the mean per individual is constant)
+             data=xdata, REML=F)
+summary(full)$varcor # singular fit and correlation =-1 
+logLik(full)
+full <- lmer(log.stress ~  z.within.ai + z.mean.ai + # fixed effects, including average per individual (z.mean.ai) and deviation from that average (z.within.ai)
+               (1+z.within.ai||Name), # random effects with within-subject variation as slope (the mean per individual is constant)
+             data=xdata, REML=F)
+
+logLik(full)
+
+# CHECK ASSUMPTIONS
+## residuals:
+diagnostics.plot(full)
+
+
+## collinearity
+library(car)
+vif(full) 
+
+## distribution of random effect 
+ranef.diagn.plot(full)
+
+
+# MODEL STABILITY
+source("/Users/hgu33/Dropbox/SDU/Bachelor/R kode/glmm_stability.r")
+
+m.stab = glmm.model.stab(model.res=full)
+head(m.stab)
+table(m.stab$detailed$lme4.warnings)
+table(m.stab$detailed$opt.warnings)
+
+m.stab.plot(m.stab$summary[,-1])
+
+# LOOK AT RESULTS
+## full-null model comparison
+null <- lmer(log.stress ~  1 + 
+               (1+z.within.ai|Name), # random effects with within-subject variation as slope 
+             data=xdata, REML=F)
+as.data.frame(anova(null, full, test="Chisq")) 
+summary(full)$coefficients
+
+# to get p-values
+full.reml <- lmerTest::lmer(log.stress ~  z.within.ai + z.mean.ai + # fixed effects, including average per individual (z.mean.ai) and deviation from that average (z.within.ai)
+                              (1+z.within.ai||Name), # random effects with within-subject variation as slope (the mean per individual is constant)
+                            data=xdata, REML=T) #
+
+summary(full.reml)
+
+summary(full.reml)$coefficients #significant for individuals, effect not significant between individuals.
+sd(xdata$mean.ai, na.rm=T) 
+sd(xdata$within.ai, na.rm=T) 
+## z-transform for interactions, cause interpretation easier, since the variables in the interaction are linked (not independent), and for mixed models to avoid convergence issues
+# rather than scaling by standard deviation of the individual predictors, we could scale by the same standard deviation - here it works well, since it's within-subject and between-subject
+xdata$z2.within.ai = (xdata$within.ai - mean(xdata$within.ai))/sd(xdata$mean.ai)
+full.z2 <- lmer(log.stress ~  z2.within.ai + z.mean.ai + # fixed effects, including average per individual (z.mean.ai) and deviation from that average (z.within.ai)
+                  (1+z2.within.ai||Name), # random effects with within-subject variation as slope (the mean per individual is constant)
+                data=xdata, REML=F)
+round(summary(full.z2)$coefficients, 3) # now we can compare the two estimates directly
+
+
+
+# PLOTTING
+plot(x=xdata$z.within.ai, y=xdata$log.stress, 
+     xlab="Pulseinterval", ylab="Delta mouthgape", 
+     xaxt="n", yaxt="n", pch=19, col=grey(level=0.3, alpha=0.3))
+## x-axis - normal labels
+range(xdata$within.ai)
+x.lab = 0:0.07
+x.at = (x.lab - mean(xdata$within.ai))/sd(xdata$within.ai)
+axis(side=1, at=x.at, labels=x.lab)
+
+## y-axis normal values - large values, so using log10
+range(xdata$pulse)
+options(scipen=8) # display format, but mine was that already
+y.lab = 10^(0:5)
+axis(side=2, labels=y.lab, at=log(y.lab))
+
+## add confidence limits using bootstrap
+source("/Users/hgu33/Dropbox/SDU/Bachelor/R kode/boot_glmm.r")
+boot.full <- boot.glmm.pred(model.res=full, excl.warnings=F, nboots=100, para=F, resol=1000, level=0.95, use="z.within.ai", circ.var.name=NULL, circ.var=NULL, use.u=F, 
+                            n.cores=c("all-1", "all"), save.path=NULL, load.lib=T, lib.loc=.libPaths(), set.all.effects.2.zero=F)
+
+m.stab.plot(boot.full$ci.estimates) 
+head(boot.full$ci.predicted)
+
+plot(x=xdata$z.within.ai, y=xdata$log.stress, 
+     xlab="Pulseinterval", ylab="Delta mouthgape", 
+     xaxt="n", yaxt="n", pch=19, col=grey(level=0.3, alpha=0.3))
+## x-axis - normal labels
+range(xdata$within.ai)
+x.lab = -2:2
+x.at = (x.lab - mean(xdata$within.ai))/sd(xdata$within.ai)
+axis(side=1, at=x.at, labels=x.lab)
+
+## y-axis normal values - large values, so using log10
+range(xdata$pulse)
+options(scipen=8) # display format, but mine was that already
+y.lab = 10^(0:5)
+axis(side=2, labels=y.lab, at=log(y.lab))
+
+## add confidence limits: (always look a bit different, since random process)
+lines(x=boot.full$ci.predicted$z.within.ai, y=boot.full$ci.predicted$fitted, lty=2, lwd=2)
+lines(x=boot.full$ci.predicted$z.within.ai, y=boot.full$ci.predicted$lower.cl, lty=2, lwd=1)
+lines(x=boot.full$ci.predicted$z.within.ai, y=boot.full$ci.predicted$upper.cl, lty=2, lwd=1)
