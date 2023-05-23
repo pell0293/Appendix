@@ -1,0 +1,654 @@
+%% APPENDIX C 
+% 1
+clear all;close all;clc
+path = 'C:\Users\hgu33\Desktop\Video filer til bachelor\Version 3\'
+files = dir([path,'*.mat']);
+
+% Load the data from each selected file
+bat3.vertical = [];
+bat4.vertical = [];
+bat5.vertical = [];
+bat8.vertical = [];
+bat3.horizontal = [];
+bat4.horizontal = [];
+bat5.horizontal = [];
+bat8.horizontal = [];
+
+bat3.verticalwormdistance = [];
+bat4.verticalwormdistance = [];
+bat5.verticalwormdistance = [];
+bat8.verticalwormdistance = [];
+bat3.horizontalwormdistance = [];
+bat4.horizontalwormdistance = [];
+bat5.horizontalwormdistance = [];
+bat8.horizontalwormdistance = [];
+
+
+for i = 1:length(files)
+    
+    load([path,files(i).name]);
+    filename = files(i).name;
+    match = str2num(filename(end-4));
+    if match == 3
+        bat3.vertical = [bat3.vertical;[Data.vertical.pulseinterval(:) Data.vertical.AtCall(:) Data.vertical.BetweenCall(:) Data.eyes.distance(Data.vertical.frame) Data.vertical.mouthcenter  Data.vertical.frame(:)]];
+        bat3.horizontal = [bat3.horizontal;[Data.horizontal.pulseinterval(:) Data.horizontal.AtCall(:) Data.horizontal.BetweenCall(:) Data.eyes.distance(Data.horizontal.frame) Data.horizontal.mouthcenter Data.horizontal.frame(:)]];
+        bat3.verticalwormdistance = [bat3.verticalwormdistance;vecnorm((Data.vertical.mouthcenter-Data.Worm)')']
+        bat3.horizontalwormdistance =[bat3.horizontalwormdistance;vecnorm((Data.horizontal.mouthcenter-Data.Worm)')']
+   
+    elseif match == 4
+        bat4.vertical = [bat4.vertical;[Data.vertical.pulseinterval(:) Data.vertical.AtCall(:) Data.vertical.BetweenCall(:) Data.eyes.distance(Data.vertical.frame) Data.vertical.mouthcenter Data.vertical.frame(:)]];
+        bat4.horizontal = [bat4.horizontal;[Data.horizontal.pulseinterval(:) Data.horizontal.AtCall(:) Data.horizontal.BetweenCall(:) Data.eyes.distance(Data.horizontal.frame) Data.horizontal.mouthcenter Data.horizontal.frame(:)]];
+        bat4.verticalwormdistance = [bat4.verticalwormdistance;vecnorm((Data.vertical.mouthcenter-Data.Worm)')']
+        bat4.horizontalwormdistance =[bat4.horizontalwormdistance;vecnorm((Data.horizontal.mouthcenter-Data.Worm)')']
+    elseif match == 5
+        bat5.vertical = [bat5.vertical;[Data.vertical.pulseinterval(:) Data.vertical.AtCall(:) Data.vertical.BetweenCall(:) Data.eyes.distance(Data.vertical.frame) Data.vertical.mouthcenter Data.vertical.frame(:)]];
+        bat5.horizontal = [bat5.horizontal;[Data.horizontal.pulseinterval(:) Data.horizontal.AtCall(:) Data.horizontal.BetweenCall(:) Data.eyes.distance(Data.horizontal.frame) Data.horizontal.mouthcenter Data.horizontal.frame(:)]];
+        bat5.verticalwormdistance = [bat5.verticalwormdistance;vecnorm((Data.vertical.mouthcenter-Data.Worm)')']
+        bat5.horizontalwormdistance =[bat5.horizontalwormdistance;vecnorm((Data.horizontal.mouthcenter-Data.Worm)')']
+    elseif match == 8
+        bat8.vertical = [bat8.vertical;[Data.vertical.pulseinterval(:) Data.vertical.AtCall(:) Data.vertical.BetweenCall(:) Data.eyes.distance(Data.vertical.frame) Data.vertical.mouthcenter Data.vertical.frame(:)]];
+        bat8.horizontal = [bat8.horizontal;[Data.horizontal.pulseinterval(:) Data.horizontal.AtCall(:) Data.horizontal.BetweenCall(:) Data.eyes.distance(Data.horizontal.frame) Data.horizontal.mouthcenter Data.horizontal.frame(:)]];
+        bat8.verticalwormdistance = [bat8.verticalwormdistance;vecnorm((Data.vertical.mouthcenter-Data.Worm)')']
+        bat8.horizontalwormdistance =[bat8.horizontalwormdistance;vecnorm((Data.horizontal.mouthcenter-Data.Worm)')']
+    else
+    end
+end
+
+
+
+
+% 1 = Pulseinterval, 2 = At Call, 3 = between Call, 4 = eye dist Mouth
+% center = 5 - 7
+
+%% 2
+%color index for plots 
+bluex = [0 0.4470 0.7410];
+redx = [0.8500 0.3250 0.0980];
+yellowx = [0.9290 0.6940 0.1250];
+greenx = [0.4660 0.6740 0.1880];
+
+
+
+
+%% 3
+% Plot the data from all files Vertical
+figure(2)
+hold on 
+x1 = bat3.vertical(:,1)
+y1 = bat3.vertical(:,2)-bat3.vertical(:,3)
+x2 = bat4.vertical(:,1)
+y2 = bat4.vertical(:,2)-bat4.vertical(:,3)
+x3 = bat5.vertical(:,1)
+y3 = bat5.vertical(:,2)-bat5.vertical(:,3)
+x4 = bat8.vertical(:,1)
+y4 = bat8.vertical(:,2)-bat8.vertical(:,3)
+dimmatrix = max([length(x1),length(x2),length(x3),length(x4)])
+plotmatrix = ones(dimmatrix,4)*NaN;
+plotxmatrix = plotmatrix;
+plotmatrix(dimmatrix-length(x1)+1:end,1) = y1;
+plotmatrix(dimmatrix-length(x2)+1:end,2) = y2;
+plotmatrix(dimmatrix-length(x3)+1:end,3) = y3;
+plotmatrix(dimmatrix-length(x4)+1:end,4) = y4;
+
+plotxmatrix(dimmatrix-length(x1)+1:end,1) = x1;
+plotxmatrix(dimmatrix-length(x2)+1:end,2) = x2;
+plotxmatrix(dimmatrix-length(x3)+1:end,3) = x3;
+plotxmatrix(dimmatrix-length(x4)+1:end,4) = x4;
+subplot(2,1,1)
+for n = 1:dimmatrix
+    hold on
+    plot(plotxmatrix(n,1),plotmatrix(n,1),'o', 'Color', bluex)
+    plot(plotxmatrix(n,2),plotmatrix(n,2),'o', 'Color', redx)
+    plot(plotxmatrix(n,3),plotmatrix(n,3),'o', 'Color', yellowx)
+    plot(plotxmatrix(n,4),plotmatrix(n,4),'o', 'Color', greenx)
+end
+ylim([0 1])
+xlim([0 0.06])
+hold off
+
+legend('Bat 3', 'Bat 4', 'Bat 5', 'Bat 8');
+xlabel('Pulse Interval (ms)')
+ylabel('Δ vertical mouth gape (mm)')
+
+hold off
+
+subplot(2,1,2)
+
+
+
+hold on
+x1 = bat3.vertical(:,1)
+y1 = bat3.vertical(:,3)
+x2 = bat4.vertical(:,1)
+y2 = bat4.vertical(:,3)
+x3 = bat5.vertical(:,1)
+y3 = bat5.vertical(:,3)
+x4 = bat8.vertical(:,1)
+y4 = bat8.vertical(:,3)
+dimmatrix = max([length(x1),length(x2),length(x3),length(x4)])
+plotmatrix = ones(dimmatrix,4)*NaN;
+plotxmatrix = plotmatrix;
+plotmatrix(dimmatrix-length(x1)+1:end,1) = y1;
+plotmatrix(dimmatrix-length(x2)+1:end,2) = y2;
+plotmatrix(dimmatrix-length(x3)+1:end,3) = y3;
+plotmatrix(dimmatrix-length(x4)+1:end,4) = y4;
+
+plotxmatrix(dimmatrix-length(x1)+1:end,1) = x1;
+plotxmatrix(dimmatrix-length(x2)+1:end,2) = x2;
+plotxmatrix(dimmatrix-length(x3)+1:end,3) = x3;
+plotxmatrix(dimmatrix-length(x4)+1:end,4) = x4;
+hold off
+
+for n = 1:dimmatrix
+    hold on
+    plot(plotxmatrix(n,1),plotmatrix(n,1),'*', 'Color', bluex)
+    plot(plotxmatrix(n,2),plotmatrix(n,2),'*', 'Color', redx)
+    plot(plotxmatrix(n,3),plotmatrix(n,3),'*', 'Color', yellowx)
+    plot(plotxmatrix(n,4),plotmatrix(n,4),'*', 'Color', greenx)
+ylim([0 1])
+xlim([0 0.06])
+end
+
+hold on 
+x1 = bat3.vertical(:,1)
+y1 = bat3.vertical(:,2)
+x2 = bat4.vertical(:,1)
+y2 = bat4.vertical(:,2)
+x3 = bat5.vertical(:,1)
+y3 = bat5.vertical(:,2)
+x4 = bat8.vertical(:,1)
+y4 = bat8.vertical(:,2)
+dimmatrix = max([length(x1),length(x2),length(x3),length(x4)])
+plotmatrix = ones(dimmatrix,4)*NaN;
+plotxmatrix = plotmatrix;
+plotmatrix(dimmatrix-length(x1)+1:end,1) = y1;
+plotmatrix(dimmatrix-length(x2)+1:end,2) = y2;
+plotmatrix(dimmatrix-length(x3)+1:end,3) = y3;
+plotmatrix(dimmatrix-length(x4)+1:end,4) = y4;
+
+
+plotxmatrix(dimmatrix-length(x1)+1:end,1) = x1;
+plotxmatrix(dimmatrix-length(x2)+1:end,2) = x2;
+plotxmatrix(dimmatrix-length(x3)+1:end,3) = x3;
+plotxmatrix(dimmatrix-length(x4)+1:end,4) = x4;
+hold off
+
+for n = 1:dimmatrix
+    hold on
+    plot(plotxmatrix(n,1),plotmatrix(n,1),'o', 'Color', bluex)
+    plot(plotxmatrix(n,2),plotmatrix(n,2),'o', 'Color', redx)
+    plot(plotxmatrix(n,3),plotmatrix(n,3),'o', 'Color', yellowx)
+    plot(plotxmatrix(n,4),plotmatrix(n,4),'o', 'Color', greenx)
+ylim([0 1])
+xlim([0 0.06])
+end
+
+
+
+
+xlabel('Pulse Interval (ms)')
+ylabel('Vertical mouth gape at call and between call (mm)');
+legend('Bat 3 at call', 'Bat 4 at call', 'Bat 5 at call', 'Bat 8 at call', 'Bat 3 between call', 'Bat 4 between call', 'Bat 5 between call', 'Bat 8 between call');
+hold off
+
+
+%% 4
+% plot linear regressions for vertical mouthmovement over pulse interval
+figure(20000)
+
+% Bat 3
+x1 = bat3.vertical(:,1);
+y1 = bat3.vertical(:,2)-bat3.vertical(:,3);
+
+% identify outliers
+[brob1, stats1] = robustfit(x1,y1);
+outliers_ind = find(abs(stats1.resid) > stats1.mad_s);
+
+% remove outliers and data with low pulse interval
+x1(outliers_ind) = [];
+y1(outliers_ind) = [];
+idx1 = x1 < 0.01;
+x_removed1 = x1(idx1);
+y_removed1 = y1(idx1);
+x1(idx1) = [];
+y1(idx1) = [];
+
+% plot all points
+subplot(1,4,1)
+hold on
+plot(x1, y1, 'o' , 'Color',bluex)
+xlabel('Pulse Interval (ms)')
+ylabel(' \delta Atcall and BetweenCall (mm)')
+ylim([0 1.6])
+xlim([0 0.06])
+
+xticks(0:0.01:0.06)
+xticklabels({'0.00', '0.01', '0.02', '0.03', '0.04', '0.05', '0.06'})
+
+
+% plot removed points separately
+if ~isempty(x_removed1)
+    plot(x_removed1, y_removed1, 'kx')
+end
+
+% plot linear regression
+mdl1 = fitlm(x1,y1,'RobustOpts','on');
+p_value = coefTest(mdl1);
+plot(mdl1 , 'Color',bluex)
+xlabel('Pulse Interval (ms)')
+ylabel('Δ vertical mouth gape (mm)')
+title(sprintf('Bat 3\nR-squared = %.2f, p = %.2e',mdl1.Rsquared.Ordinary, p_value))
+hold off
+
+
+% Bat 4
+x2 = bat4.vertical(:,1);
+y2 = bat4.vertical(:,2)-bat4.vertical(:,3);
+
+% identify outliers
+[brob2, stats2] = robustfit(x2,y2);
+outliers_ind = find(abs(stats2.resid) > stats2.mad_s);
+
+% remove outliers and data with low pulse interval
+x2(outliers_ind) = [];
+y2(outliers_ind) = [];
+idx2 = x2 < 0.01;
+x_removed2 = x2(idx2);
+y_removed2 = y2(idx2);
+x2(idx2) = [];
+y2(idx2) = [];
+
+% plot all points
+subplot(1,4,2)
+hold on
+plot(x2, y2, 'o' , 'Color',redx)
+xlabel('Pulse Interval')
+ylabel('Dif Atcall and BetweenCall (mm)')
+ylim([0 1.6])
+xlim([0 0.06])
+xticks(0:0.01:0.06)
+xticklabels({'0.00', '0.01', '0.02', '0.03', '0.04', '0.05', '0.06'})
+
+% plot removed points separately
+if ~isempty(x_removed2)
+    plot(x_removed2, y_removed2, 'kx')
+end
+
+% plot linear regression
+mdl2 = fitlm(x2,y2,'RobustOpts','on');
+plot(mdl2 , 'Color',redx)
+xlabel('Pulse Interval (ms)')
+ylabel('Δ vertical mouth gape (mm)')
+p_value = coefTest(mdl2);
+title(sprintf('Bat 4\nR-squared = %.2f, p = %.2e',mdl2.Rsquared.Ordinary, p_value))
+hold off
+
+% Bat 5
+x3 = bat5.vertical(:,1);
+y3 = bat5.vertical(:,2)-bat5.vertical(:,3);
+
+% identify outliers
+[brob3, stats3] = robustfit(x3,y3);
+outliers_ind = find(abs(stats3.resid) > stats3.mad_s);
+
+% remove outliers and data with low pulse interval
+x3(outliers_ind) = [];
+y3(outliers_ind) = [];
+idx3 = x3 < 0.01;
+x_removed3 = x3(idx3);
+y_removed3 = y3(idx3);
+x3(idx3) = [];
+y3(idx3) = [];
+
+% plot all points
+subplot(1,4,3)
+hold on
+plot(x3, y3, 'o' , 'Color',yellowx)
+xlabel('Pulse Interval')
+ylabel('Dif Atcall and BetweenCall (mm)')
+ylim([0 1.6])
+xlim([0 0.06])
+xticks(0:0.01:0.06)
+xticklabels({'0.00', '0.01', '0.02', '0.03', '0.04', '0.05', '0.06'})
+
+% plot removed points separately
+if ~isempty(x_removed3)
+    plot(x_removed3, y_removed3, 'kx')
+end
+
+% plot linear regression
+mdl3 = fitlm(x3,y3,'RobustOpts','on');
+plot(mdl3 , 'Color',yellowx)
+xlabel('Pulse Interval (ms)')
+ylabel('Δ vertical mouth gape (mm)')
+p_value = coefTest(mdl3);
+title(sprintf('Bat 5\nR-squared = %.2f, p = %.2e',mdl3.Rsquared.Ordinary, p_value))
+hold off
+
+% Bat 8
+x4 = bat8.vertical(:,1);
+y4 = bat8.vertical(:,2)-bat8.vertical(:,3);
+
+% identify outliers
+[brob4, stats4] = robustfit(x4,y4);
+outliers_ind = find(abs(stats4.resid) > stats4.mad_s);
+
+% remove outliers and data with low pulse interval
+x4(outliers_ind) = [];
+y4(outliers_ind) = [];
+idx4 = x4 < 0.01;
+x_removed4 = x4(idx4);
+y_removed4 = y4(idx4);
+x4(idx4) = [];
+y4(idx4) = [];
+
+% plot all points
+subplot(1,4,4)
+hold on
+plot(x4, y4, 'o' , 'Color',greenx)
+xlabel('Pulse Interval')
+ylabel('Dif Atcall and BetweenCall (mm)')
+ylim([0 1.6])
+xlim([0 0.06])
+xticks(0:0.01:0.06)
+xticklabels({'0.00', '0.01', '0.02', '0.03', '0.04', '0.05', '0.06'})
+
+% plot removed points separately
+if ~isempty(x_removed4)
+    plot(x_removed4, y_removed4, 'kx')
+end
+
+% plot linear regression
+mdl4 = fitlm(x4,y4,'RobustOpts','on');
+plot(mdl4 , 'Color',greenx)
+xlabel('Pulse Interval (ms)')
+ylabel('Δ vertical mouth gape (mm)')
+p_value = coefTest(mdl4);
+title(sprintf('Bat 8\nR-squared = %.2f, p = %.2e',mdl4.Rsquared.Ordinary, p_value))
+
+linkaxes([subplot(1,4,1) subplot(1,4,2) subplot(1,4,3) subplot(1,4,4)], 'xy')
+%% 5
+% Extract the coefficients from the linear models
+coef1 = mdl1.Coefficients.Estimate;
+coef2 = mdl2.Coefficients.Estimate;
+coef3 = mdl3.Coefficients.Estimate;
+coef4 = mdl4.Coefficients.Estimate;
+% Combine the coefficients into a matrix
+coeff_matrix = [coef1, coef2, coef3, coef4];
+
+
+% Perform one-way ANOVA on the transposed coefficient matrix
+p_value = anova1(coeff_matrix);
+
+
+
+%% 6
+% Plot the data from all files horizontal
+
+figure(4)
+hold on 
+x1 = bat3.horizontal(:,1)
+y1 = bat3.horizontal(:,2)-bat3.horizontal(:,3)
+x2 = bat4.horizontal(:,1)
+y2 = bat4.horizontal(:,2)-bat4.horizontal(:,3)
+x3 = bat5.horizontal(:,1)
+y3 = bat5.horizontal(:,2)-bat5.horizontal(:,3)
+x4 = bat8.horizontal(:,1)
+y4 = bat8.horizontal(:,2)-bat8.horizontal(:,3)
+dimmatrix = max([length(x1),length(x2),length(x3),length(x4)])
+plotmatrix = ones(dimmatrix,4)*NaN;
+plotxmatrix = plotmatrix;
+plotmatrix(dimmatrix-length(x1)+1:end,1) = y1;
+plotmatrix(dimmatrix-length(x2)+1:end,2) = y2;
+plotmatrix(dimmatrix-length(x3)+1:end,3) = y3;
+plotmatrix(dimmatrix-length(x4)+1:end,4) = y4;
+
+plotxmatrix(dimmatrix-length(x1)+1:end,1) = x1;
+plotxmatrix(dimmatrix-length(x2)+1:end,2) = x2;
+plotxmatrix(dimmatrix-length(x3)+1:end,3) = x3;
+plotxmatrix(dimmatrix-length(x4)+1:end,4) = x4;
+subplot(2,1,1)
+for n = 1:dimmatrix
+    hold on
+    plot(plotxmatrix(n,1),plotmatrix(n,1),'o', 'Color', bluex)
+    plot(plotxmatrix(n,2),plotmatrix(n,2),'o', 'Color', redx)
+    plot(plotxmatrix(n,3),plotmatrix(n,3),'o', 'Color', yellowx)
+    plot(plotxmatrix(n,4),plotmatrix(n,4),'o', 'Color', greenx)
+    xlim([0 0.1])
+end
+hold off
+legend('Bat 3', 'Bat 4', 'Bat 5', 'Bat 8');
+xlabel('Pulse Interval (ms)')
+ylabel('Δ Horizontal mouth gape (mm)')
+
+hold off
+
+subplot(2,1,2)
+
+
+
+hold on
+x1 = bat3.horizontal(:,1)
+y1 = bat3.horizontal(:,3)
+x2 = bat4.horizontal(:,1)
+y2 = bat4.horizontal(:,3)
+x3 = bat5.horizontal(:,1)
+y3 = bat5.horizontal(:,3)
+x4 = bat8.horizontal(:,1)
+y4 = bat8.horizontal(:,3)
+dimmatrix = max([length(x1),length(x2),length(x3),length(x4)])
+plotmatrix = ones(dimmatrix,4)*NaN;
+plotxmatrix = plotmatrix;
+plotmatrix(dimmatrix-length(x1)+1:end,1) = y1;
+plotmatrix(dimmatrix-length(x2)+1:end,2) = y2;
+plotmatrix(dimmatrix-length(x3)+1:end,3) = y3;
+plotmatrix(dimmatrix-length(x4)+1:end,4) = y4;
+
+plotxmatrix(dimmatrix-length(x1)+1:end,1) = x1;
+plotxmatrix(dimmatrix-length(x2)+1:end,2) = x2;
+plotxmatrix(dimmatrix-length(x3)+1:end,3) = x3;
+plotxmatrix(dimmatrix-length(x4)+1:end,4) = x4;
+hold off
+
+for n = 1:dimmatrix
+    hold on
+    plot(plotxmatrix(n,1),plotmatrix(n,1),'*', 'Color', bluex)
+    plot(plotxmatrix(n,2),plotmatrix(n,2),'*', 'Color', redx)
+    plot(plotxmatrix(n,3),plotmatrix(n,3),'*', 'Color', yellowx)
+    plot(plotxmatrix(n,4),plotmatrix(n,4),'*', 'Color', greenx)
+    xlim([0 0.1])
+end
+
+hold on 
+x1 = bat3.horizontal(:,1)
+y1 = bat3.horizontal(:,2)
+x2 = bat4.horizontal(:,1)
+y2 = bat4.horizontal(:,2)
+x3 = bat5.horizontal(:,1)
+y3 = bat5.horizontal(:,2)
+x4 = bat8.horizontal(:,1)
+y4 = bat8.horizontal(:,2)
+dimmatrix = max([length(x1),length(x2),length(x3),length(x4)])
+plotmatrix = ones(dimmatrix,4)*NaN;
+plotxmatrix = plotmatrix;
+plotmatrix(dimmatrix-length(x1)+1:end,1) = y1;
+plotmatrix(dimmatrix-length(x2)+1:end,2) = y2;
+plotmatrix(dimmatrix-length(x3)+1:end,3) = y3;
+plotmatrix(dimmatrix-length(x4)+1:end,4) = y4;
+
+
+plotxmatrix(dimmatrix-length(x1)+1:end,1) = x1;
+plotxmatrix(dimmatrix-length(x2)+1:end,2) = x2;
+plotxmatrix(dimmatrix-length(x3)+1:end,3) = x3;
+plotxmatrix(dimmatrix-length(x4)+1:end,4) = x4;
+hold off
+
+for n = 1:dimmatrix
+    hold on
+    plot(plotxmatrix(n,1),plotmatrix(n,1),'o', 'Color', bluex)
+    plot(plotxmatrix(n,2),plotmatrix(n,2),'o', 'Color', redx)
+    plot(plotxmatrix(n,3),plotmatrix(n,3),'o', 'Color', yellowx)
+    plot(plotxmatrix(n,4),plotmatrix(n,4),'o', 'Color', greenx)
+    xlim([0 0.1])
+end
+
+
+
+
+xlabel('Pulse Interval (ms)')
+ylabel('Horizontal mouth gape at call and between call (mm)');
+legend('Bat 3 at call', 'Bat 4 at call', 'Bat 5 at call', 'Bat 8 at call', 'Bat 3 between call', 'Bat 4 between call', 'Bat 5 between call', 'Bat 8 between call');
+hold off
+
+%% 7
+% Plot the data from all files Vertical dist worm
+figure(5)
+x1 = bat3.verticalwormdistance
+y1 = bat3.vertical(:,2)-bat3.vertical(:,3)
+x2 = bat4.verticalwormdistance
+y2 = bat4.vertical(:,2)-bat4.vertical(:,3)
+x3 = bat5.verticalwormdistance
+y3 = bat5.vertical(:,2)-bat5.vertical(:,3)
+x4 = bat8.verticalwormdistance
+y4 = bat8.vertical(:,2)-bat8.vertical(:,3)
+subplot (2,1,1)
+hold on 
+dimmatrix = max([length(x1),length(x2),length(x3),length(x4)])
+plotmatrix = ones(dimmatrix,4)*NaN;
+plotxmatrix = plotmatrix;
+plotmatrix(dimmatrix-length(x1)+1:end,1) = y1;
+plotmatrix(dimmatrix-length(x2)+1:end,2) = y2;
+plotmatrix(dimmatrix-length(x3)+1:end,3) = y3;
+plotmatrix(dimmatrix-length(x4)+1:end,4) = y4;
+
+plotxmatrix(dimmatrix-length(x1)+1:end,1) = x1;
+plotxmatrix(dimmatrix-length(x2)+1:end,2) = x2;
+plotxmatrix(dimmatrix-length(x3)+1:end,3) = x3;
+plotxmatrix(dimmatrix-length(x4)+1:end,4) = x4;
+subplot(2,1,1)
+for n = 1:dimmatrix
+    hold on
+    plot(plotxmatrix(n,1),plotmatrix(n,1),'o', 'Color', bluex)
+    plot(plotxmatrix(n,2),plotmatrix(n,2),'o', 'Color', redx)
+    plot(plotxmatrix(n,3),plotmatrix(n,3),'o', 'Color', yellowx)
+    plot(plotxmatrix(n,4),plotmatrix(n,4),'o', 'Color', greenx)
+end
+
+hold off
+
+legend('Bat 3', 'Bat 4', 'Bat 5', 'Bat 8');
+xlabel('Distance to worm (mm)')
+ylabel('Δ vertical mouth gape (mm)')
+
+hold off
+
+subplot(2,1,2)
+hold on
+x1 = bat3.verticalwormdistance
+y1 = bat3.vertical(:,3)
+x2 = bat4.verticalwormdistance
+y2 = bat4.vertical(:,3)
+x3 = bat5.verticalwormdistance
+y3 = bat5.vertical(:,3)
+x4 = bat8.verticalwormdistance
+y4 = bat8.vertical(:,3)
+dimmatrix = max([length(x1),length(x2),length(x3),length(x4)])
+plotmatrix = ones(dimmatrix,4)*NaN;
+plotxmatrix = plotmatrix;
+plotmatrix(dimmatrix-length(x1)+1:end,1) = y1;
+plotmatrix(dimmatrix-length(x2)+1:end,2) = y2;
+plotmatrix(dimmatrix-length(x3)+1:end,3) = y3;
+plotmatrix(dimmatrix-length(x4)+1:end,4) = y4;
+
+plotxmatrix(dimmatrix-length(x1)+1:end,1) = x1;
+plotxmatrix(dimmatrix-length(x2)+1:end,2) = x2;
+plotxmatrix(dimmatrix-length(x3)+1:end,3) = x3;
+plotxmatrix(dimmatrix-length(x4)+1:end,4) = x4;
+hold off
+
+for n = 1:dimmatrix
+    hold on
+    plot(plotxmatrix(n,1),plotmatrix(n,1),'*', 'Color', bluex)
+    plot(plotxmatrix(n,2),plotmatrix(n,2),'*', 'Color', redx)
+    plot(plotxmatrix(n,3),plotmatrix(n,3),'*', 'Color', yellowx)
+    plot(plotxmatrix(n,4),plotmatrix(n,4),'*', 'Color', greenx)
+
+end
+
+hold on 
+x1 = bat3.verticalwormdistance
+y1 = bat3.vertical(:,2)
+x2 = bat4.verticalwormdistance
+y2 = bat4.vertical(:,2)
+x3 = bat5.verticalwormdistance
+y3 = bat5.vertical(:,2)
+x4 = bat8.verticalwormdistance
+y4 = bat8.vertical(:,2)
+dimmatrix = max([length(x1),length(x2),length(x3),length(x4)])
+plotmatrix = ones(dimmatrix,4)*NaN;
+plotxmatrix = plotmatrix;
+plotmatrix(dimmatrix-length(x1)+1:end,1) = y1;
+plotmatrix(dimmatrix-length(x2)+1:end,2) = y2;
+plotmatrix(dimmatrix-length(x3)+1:end,3) = y3;
+plotmatrix(dimmatrix-length(x4)+1:end,4) = y4;
+
+
+plotxmatrix(dimmatrix-length(x1)+1:end,1) = x1;
+plotxmatrix(dimmatrix-length(x2)+1:end,2) = x2;
+plotxmatrix(dimmatrix-length(x3)+1:end,3) = x3;
+plotxmatrix(dimmatrix-length(x4)+1:end,4) = x4;
+hold off
+
+for n = 1:dimmatrix
+    hold on
+    plot(plotxmatrix(n,1),plotmatrix(n,1),'o', 'Color', bluex)
+    plot(plotxmatrix(n,2),plotmatrix(n,2),'o', 'Color', redx)
+    plot(plotxmatrix(n,3),plotmatrix(n,3),'o', 'Color', yellowx)
+    plot(plotxmatrix(n,4),plotmatrix(n,4),'o', 'Color', greenx)
+
+
+end
+
+xlabel('Distance to worm (mm)')
+ylabel('Vertical mouth gape at call and between call (mm)');
+legend('Bat 3 at call', 'Bat 4 at call', 'Bat 5 at call', 'Bat 8 at call', 'Bat 3 between call', 'Bat 4 between call', 'Bat 5 between call', 'Bat 8 between call');
+hold off
+%% 8
+% plot distance to worm over pulse interval
+figure(6)
+y1 = bat3.verticalwormdistance
+x1 = bat3.vertical(:,1)
+y2 = bat4.verticalwormdistance
+x2 = bat4.vertical(:,1)
+y3 = bat5.verticalwormdistance
+x3 = bat5.vertical(:,1)
+y4 = bat8.verticalwormdistance
+x4 = bat8.vertical(:,1)
+
+hold on
+dimmatrix = max([length(x1),length(x2),length(x3),length(x4)])
+plotmatrix = ones(dimmatrix,4)*NaN;
+plotxmatrix = plotmatrix;
+plotmatrix(dimmatrix-length(x1)+1:end,1) = y1;
+plotmatrix(dimmatrix-length(x2)+1:end,2) = y2;
+plotmatrix(dimmatrix-length(x3)+1:end,3) = y3;
+plotmatrix(dimmatrix-length(x4)+1:end,4) = y4;
+
+plotxmatrix(dimmatrix-length(x1)+1:end,1) = x1;
+plotxmatrix(dimmatrix-length(x2)+1:end,2) = x2;
+plotxmatrix(dimmatrix-length(x3)+1:end,3) = x3;
+plotxmatrix(dimmatrix-length(x4)+1:end,4) = x4;
+subplot(2,1,1)
+for n = 1:dimmatrix
+    hold on
+    plot(plotxmatrix(n,1),plotmatrix(n,1),'o', 'Color', bluex)
+    plot(plotxmatrix(n,2),plotmatrix(n,2),'o', 'Color', redx)
+    plot(plotxmatrix(n,3),plotmatrix(n,3),'o', 'Color', yellowx)
+    plot(plotxmatrix(n,4),plotmatrix(n,4),'o', 'Color', greenx)
+end
+legend('Bat 3', 'Bat 4', 'Bat 5', 'Bat 8');
+ylabel('Distance to worm (mm)')
+xlabel('Pulseinterval (ms)')
+ylim([0 500])
+xlim([0 0.06])
+hold off
