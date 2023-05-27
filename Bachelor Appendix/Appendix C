@@ -1,5 +1,4 @@
 %% APPENDIX C 
-% 1
 clear all;close all;clc
 path = 'C:\Users\hgu33\Desktop\Video filer til bachelor\Version 3\'
 files = dir([path,'*.mat']);
@@ -60,7 +59,7 @@ end
 % 1 = Pulseinterval, 2 = At Call, 3 = between Call, 4 = eye dist Mouth
 % center = 5 - 7
 
-%% 2
+%% 
 %color index for plots 
 bluex = [0 0.4470 0.7410];
 redx = [0.8500 0.3250 0.0980];
@@ -70,8 +69,7 @@ greenx = [0.4660 0.6740 0.1880];
 
 
 
-%% 3
-% Plot the data from all files Vertical
+%% Plot the data from all files Vertical
 figure(2)
 hold on 
 x1 = bat3.vertical(:,1)
@@ -94,7 +92,8 @@ plotxmatrix(dimmatrix-length(x1)+1:end,1) = x1;
 plotxmatrix(dimmatrix-length(x2)+1:end,2) = x2;
 plotxmatrix(dimmatrix-length(x3)+1:end,3) = x3;
 plotxmatrix(dimmatrix-length(x4)+1:end,4) = x4;
-subplot(2,1,1)
+subplot(2,2,1)
+title ('A')
 for n = 1:dimmatrix
     hold on
     plot(plotxmatrix(n,1),plotmatrix(n,1),'o', 'Color', bluex)
@@ -102,17 +101,18 @@ for n = 1:dimmatrix
     plot(plotxmatrix(n,3),plotmatrix(n,3),'o', 'Color', yellowx)
     plot(plotxmatrix(n,4),plotmatrix(n,4),'o', 'Color', greenx)
 end
-ylim([0 1])
+ylim([0 3])
 xlim([0 0.06])
 hold off
 
 legend('Bat 3', 'Bat 4', 'Bat 5', 'Bat 8');
-xlabel('Pulse Interval (ms)')
+xlabel('Pulse Interval (s)')
 ylabel('Δ vertical mouth gape (mm)')
 
 hold off
 
-subplot(2,1,2)
+subplot(2,2,2)
+title ('B')
 
 
 
@@ -145,8 +145,10 @@ for n = 1:dimmatrix
     plot(plotxmatrix(n,2),plotmatrix(n,2),'*', 'Color', redx)
     plot(plotxmatrix(n,3),plotmatrix(n,3),'*', 'Color', yellowx)
     plot(plotxmatrix(n,4),plotmatrix(n,4),'*', 'Color', greenx)
-ylim([0 1])
+
 xlim([0 0.06])
+ylim([4 10])
+
 end
 
 hold on 
@@ -179,21 +181,18 @@ for n = 1:dimmatrix
     plot(plotxmatrix(n,2),plotmatrix(n,2),'o', 'Color', redx)
     plot(plotxmatrix(n,3),plotmatrix(n,3),'o', 'Color', yellowx)
     plot(plotxmatrix(n,4),plotmatrix(n,4),'o', 'Color', greenx)
-ylim([0 1])
+
 xlim([0 0.06])
+ylim([4 10])
 end
 
-
-
-
-xlabel('Pulse Interval (ms)')
+xlabel('Pulse Interval (s)')
 ylabel('Vertical mouth gape at call and between call (mm)');
 legend('Bat 3 at call', 'Bat 4 at call', 'Bat 5 at call', 'Bat 8 at call', 'Bat 3 between call', 'Bat 4 between call', 'Bat 5 between call', 'Bat 8 between call');
 hold off
 
 
-%% 4
-% plot linear regressions for vertical mouthmovement over pulse interval
+%% 
 figure(20000)
 
 % Bat 3
@@ -214,10 +213,10 @@ x1(idx1) = [];
 y1(idx1) = [];
 
 % plot all points
-subplot(1,4,1)
+subplot(2,4,1)
 hold on
 plot(x1, y1, 'o' , 'Color',bluex)
-xlabel('Pulse Interval (ms)')
+xlabel('Pulse Interval (s)')
 ylabel(' \delta Atcall and BetweenCall (mm)')
 ylim([0 1.6])
 xlim([0 0.06])
@@ -235,7 +234,7 @@ end
 mdl1 = fitlm(x1,y1,'RobustOpts','on');
 p_value = coefTest(mdl1);
 plot(mdl1 , 'Color',bluex)
-xlabel('Pulse Interval (ms)')
+xlabel('Pulse Interval (s)')
 ylabel('Δ vertical mouth gape (mm)')
 title(sprintf('Bat 3\nR-squared = %.2f, p = %.2e',mdl1.Rsquared.Ordinary, p_value))
 hold off
@@ -259,7 +258,7 @@ x2(idx2) = [];
 y2(idx2) = [];
 
 % plot all points
-subplot(1,4,2)
+subplot(2,4,2)
 hold on
 plot(x2, y2, 'o' , 'Color',redx)
 xlabel('Pulse Interval')
@@ -277,7 +276,7 @@ end
 % plot linear regression
 mdl2 = fitlm(x2,y2,'RobustOpts','on');
 plot(mdl2 , 'Color',redx)
-xlabel('Pulse Interval (ms)')
+xlabel('Pulse Interval (s)')
 ylabel('Δ vertical mouth gape (mm)')
 p_value = coefTest(mdl2);
 title(sprintf('Bat 4\nR-squared = %.2f, p = %.2e',mdl2.Rsquared.Ordinary, p_value))
@@ -301,10 +300,10 @@ x3(idx3) = [];
 y3(idx3) = [];
 
 % plot all points
-subplot(1,4,3)
+subplot(2,4,3)
 hold on
 plot(x3, y3, 'o' , 'Color',yellowx)
-xlabel('Pulse Interval')
+xlabel('Pulse Interval (s)')
 ylabel('Dif Atcall and BetweenCall (mm)')
 ylim([0 1.6])
 xlim([0 0.06])
@@ -319,7 +318,7 @@ end
 % plot linear regression
 mdl3 = fitlm(x3,y3,'RobustOpts','on');
 plot(mdl3 , 'Color',yellowx)
-xlabel('Pulse Interval (ms)')
+xlabel('Pulse Interval (s)')
 ylabel('Δ vertical mouth gape (mm)')
 p_value = coefTest(mdl3);
 title(sprintf('Bat 5\nR-squared = %.2f, p = %.2e',mdl3.Rsquared.Ordinary, p_value))
@@ -343,10 +342,10 @@ x4(idx4) = [];
 y4(idx4) = [];
 
 % plot all points
-subplot(1,4,4)
+subplot(2,4,4)
 hold on
 plot(x4, y4, 'o' , 'Color',greenx)
-xlabel('Pulse Interval')
+xlabel('Pulse Interval (s)')
 ylabel('Dif Atcall and BetweenCall (mm)')
 ylim([0 1.6])
 xlim([0 0.06])
@@ -361,13 +360,13 @@ end
 % plot linear regression
 mdl4 = fitlm(x4,y4,'RobustOpts','on');
 plot(mdl4 , 'Color',greenx)
-xlabel('Pulse Interval (ms)')
+xlabel('Pulse Interval (s)')
 ylabel('Δ vertical mouth gape (mm)')
 p_value = coefTest(mdl4);
 title(sprintf('Bat 8\nR-squared = %.2f, p = %.2e',mdl4.Rsquared.Ordinary, p_value))
 
-linkaxes([subplot(1,4,1) subplot(1,4,2) subplot(1,4,3) subplot(1,4,4)], 'xy')
-%% 5
+linkaxes([subplot(2,4,1) subplot(2,4,2) subplot(2,4,3) subplot(2,4,4)], 'xy')
+%%
 % Extract the coefficients from the linear models
 coef1 = mdl1.Coefficients.Estimate;
 coef2 = mdl2.Coefficients.Estimate;
@@ -382,10 +381,23 @@ p_value = anova1(coeff_matrix);
 
 
 
-%% 6
-% Plot the data from all files horizontal
 
-figure(4)
+%% Data extraction 
+
+% bat3_table = table(repmat("bat3", size(x1)), x1, y1, 'VariableNames', {'Name', 'pulse', 'delta mouth'});
+% bat4_table = table(repmat("bat4", size(x2)), x2, y2, 'VariableNames', {'Name', 'pulse', 'delta mouth'});
+% bat5_table = table(repmat("bat5", size(x3)), x3, y3, 'VariableNames', {'Name', 'pulse', 'delta mouth'});
+% bat8_table = table(repmat("bat8", size(x4)), x4, y4, 'VariableNames', {'Name', 'pulse','delta mouth'});
+% 
+% % Concatenate the tables vertically to create a single table with all the data
+% all_data_table_sorted = vertcat(bat3_table, bat4_table, bat5_table, bat8_table);
+% 
+% writetable(all_data_table_sorted, 'all_data_table_sorted.xlsx');
+
+
+%% Plot the data from all files horizontal
+
+figure(2)
 hold on 
 x1 = bat3.horizontal(:,1)
 y1 = bat3.horizontal(:,2)-bat3.horizontal(:,3)
@@ -407,23 +419,26 @@ plotxmatrix(dimmatrix-length(x1)+1:end,1) = x1;
 plotxmatrix(dimmatrix-length(x2)+1:end,2) = x2;
 plotxmatrix(dimmatrix-length(x3)+1:end,3) = x3;
 plotxmatrix(dimmatrix-length(x4)+1:end,4) = x4;
-subplot(2,1,1)
+subplot(2,2,3)
+title ('C')
 for n = 1:dimmatrix
     hold on
     plot(plotxmatrix(n,1),plotmatrix(n,1),'o', 'Color', bluex)
     plot(plotxmatrix(n,2),plotmatrix(n,2),'o', 'Color', redx)
     plot(plotxmatrix(n,3),plotmatrix(n,3),'o', 'Color', yellowx)
     plot(plotxmatrix(n,4),plotmatrix(n,4),'o', 'Color', greenx)
-    xlim([0 0.1])
+    xlim([0 0.06])
+    ylim([0 3])
 end
 hold off
 legend('Bat 3', 'Bat 4', 'Bat 5', 'Bat 8');
-xlabel('Pulse Interval (ms)')
+xlabel('Pulse Interval (s)')
 ylabel('Δ Horizontal mouth gape (mm)')
 
 hold off
 
-subplot(2,1,2)
+subplot(2,2,4)
+title ('D')
 
 
 
@@ -456,7 +471,8 @@ for n = 1:dimmatrix
     plot(plotxmatrix(n,2),plotmatrix(n,2),'*', 'Color', redx)
     plot(plotxmatrix(n,3),plotmatrix(n,3),'*', 'Color', yellowx)
     plot(plotxmatrix(n,4),plotmatrix(n,4),'*', 'Color', greenx)
-    xlim([0 0.1])
+    xlim([0 0.06])
+    ylim([4 10])
 end
 
 hold on 
@@ -489,19 +505,19 @@ for n = 1:dimmatrix
     plot(plotxmatrix(n,2),plotmatrix(n,2),'o', 'Color', redx)
     plot(plotxmatrix(n,3),plotmatrix(n,3),'o', 'Color', yellowx)
     plot(plotxmatrix(n,4),plotmatrix(n,4),'o', 'Color', greenx)
-    xlim([0 0.1])
+    xlim([0 0.06])
+    ylim([4 10])
 end
 
 
 
 
-xlabel('Pulse Interval (ms)')
+xlabel('Pulse Interval (s)')
 ylabel('Horizontal mouth gape at call and between call (mm)');
 legend('Bat 3 at call', 'Bat 4 at call', 'Bat 5 at call', 'Bat 8 at call', 'Bat 3 between call', 'Bat 4 between call', 'Bat 5 between call', 'Bat 8 between call');
 hold off
 
-%% 7
-% Plot the data from all files Vertical dist worm
+%% Plot the data from all files Vertical dist worm
 figure(5)
 x1 = bat3.verticalwormdistance
 y1 = bat3.vertical(:,2)-bat3.vertical(:,3)
@@ -613,8 +629,7 @@ xlabel('Distance to worm (mm)')
 ylabel('Vertical mouth gape at call and between call (mm)');
 legend('Bat 3 at call', 'Bat 4 at call', 'Bat 5 at call', 'Bat 8 at call', 'Bat 3 between call', 'Bat 4 between call', 'Bat 5 between call', 'Bat 8 between call');
 hold off
-%% 8
-% plot distance to worm over pulse interval
+%%
 figure(6)
 y1 = bat3.verticalwormdistance
 x1 = bat3.vertical(:,1)
@@ -648,7 +663,7 @@ for n = 1:dimmatrix
 end
 legend('Bat 3', 'Bat 4', 'Bat 5', 'Bat 8');
 ylabel('Distance to worm (mm)')
-xlabel('Pulseinterval (ms)')
+xlabel('Pulseinterval (s)')
 ylim([0 500])
 xlim([0 0.06])
 hold off
